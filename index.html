@@ -2653,6 +2653,9 @@ const SPOTS=[
    text:'坪井川の東に建つ市役所の14階は展望ロビーになっていて、熊本城を東から一望できます。',meta:[['展望','14階']]},
   {id:'joka',name:'城下町（古町）',kana:'じょうかまち ふるまち',at:[-40,234],pos:[-40,232],look:[-40,4,200],edoOnly:true,
    text:'坪井川の南の町人の町。加藤清正が碁盤の目に町割りしたと伝わり、一つの区画の中にお寺を置いた「一町一寺」の町並みが特徴です。白川の水運と、豊前街道・薩摩街道が交わる商いの町でした。',meta:[['町割り','碁盤目・一町一寺'],['町の名','古町・新町']]}];
+/* お城さんぽ共通（/oshiro/common/fuda.js の見どころ札・写真モード）へ、名所と自分の位置を知らせる窓口 */
+window.OshiroGame={ spots:()=>spotList(), all:()=>SPOTS, me:()=>({x:P.x,z:P.z,level:P.level,room:!!P.room,walk:P.mode==='walk',tour:typeof tour!=='undefined'&&!!tour.on}), started:()=>typeof started==='undefined'||!!started, warpAt:0 };
+{ const _tp=teleport; teleport=function(s){ window.OshiroGame.warpAt=performance.now(); return _tp.apply(this,arguments); }; }
 function spotList(){ return SPOTS.filter(s=>MODE==='edo'?!s.modernOnly:!s.edoOnly).map(s=>MODE==='edo'&&s.edo?Object.assign({},s,s.edo):s); }
 function areaAt(x,z){ const e=MODE==='edo';
   for(const b of actB()) if(inR(b,x,z,.2)) return b.name;
@@ -3771,6 +3774,7 @@ renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault();
 })();
 </script>
 <script src="/oshiro/common/goshuin.js"></script>
+<script src="/oshiro/common/fuda.js"></script>
 <!-- oshiro-portal:end -->
 
 </body>
