@@ -1421,6 +1421,7 @@ const RAMPS=[
   {id:'nishiyagura',x0:-92,x1:-80,z0:24,z1:32,a:'x',f:-92,t:-80,h0:16,h1:25,name:'西櫓御門への石段'},
   {id:'sukiyaN',x0:-66,x1:-58,z0:-16,z1:2,a:'z',f:2,t:-16,h0:25,h1:30,name:'数寄屋丸から本丸への石段'},
   {id:'kurai',x0:6,x1:12,z0:2,z1:40,a:'z',f:40,t:2,h0:22,h1:30,name:'闇り通路'},
+  {id:'kuraiEW',x0:-14,x1:22,z0:11,z1:17,a:'x',f:-14,t:22,h0:27.3,h1:27.3,name:'闇り通路（東西）'},
   {id:'takeIida',x0:-14,x1:-6,z0:58,z1:84,a:'z',f:84,t:58,h0:8,h1:22,name:'竹の丸から飯田丸への石段'},
   {id:'takeHigashi',x0:72,x1:80,z0:58,z1:80,a:'z',f:80,t:58,h0:8,h1:20,name:'東竹之丸への石段'},
   {id:'hoate',x0:50,x1:68,z0:-12,z1:-4,a:'x',f:68,t:50,h0:20,h1:30,name:'頬当御門'},
@@ -1743,6 +1744,8 @@ const cScroll=makeCanvas(128,320);{ const g=cScroll.getContext('2d'); g.fillStyl
   for(let i=0;i<5;i++){ g.lineWidth=2+rnd()*3; g.beginPath(); const y=120+i*30; g.moveTo(16,y); for(let x=16;x<114;x+=8) g.lineTo(x,y-Math.abs(Math.sin(x*.07+i))*30*rnd()); g.stroke(); } g.fillStyle='rgba(30,25,20,.55)'; g.beginPath(); g.arc(90,60,10,0,6.283); g.fill(); g.fillStyle='#b0301e'; g.fillRect(96,262,10,12); }
 M.scroll=std({map:toTex(cScroll,true,false),roughness:.9}); BKEYS.push('scroll'); BS.scroll=new Batch();
 /* ---------- 階ごとの内装の素材 ---------- */
+/* 目地漆喰の石垣（闇り通路）: 石のすき間に白い漆喰を詰める */
+function mejiTex(){ const c=makeCanvas(256,256),g=c.getContext('2d'); g.fillStyle='#f1ede2'; g.fillRect(0,0,256,256); let y=0,r=0; while(y<256){ const h=26+((r*37)%14); let x=-((r*23)%40); while(x<256){ const w=34+((x*7+r*13)&31); const v=95+((x*3+r*11)%40); g.fillStyle=`rgb(${v+18},${v+12},${v})`; g.fillRect(x+3,y+3,w-6,h-6); x+=w; } y+=h; r++; } return c; }
 function addMat(k,m){ M[k]=m; if(m.color) m.color.convertSRGBToLinear(); if(m.emissive) m.emissive.convertSRGBToLinear(); if(!BKEYS.includes(k)) BKEYS.push(k); BS[k]=new Batch(); }
 function fusumaFrame(g,w,h){ const pw=w/4; g.strokeStyle='#1b130b'; g.lineWidth=6; for(let i=0;i<4;i++){ g.strokeRect(i*pw+3,3,pw-6,h-6); g.fillStyle='#2a1f12'; g.beginPath(); g.ellipse(i*pw+(i%2?10:pw-10),h*.52,5,9,0,0,6.283); g.fill(); g.fillStyle='#c99a35'; g.beginPath(); g.ellipse(i*pw+(i%2?10:pw-10),h*.52,3,6,0,0,6.283); g.fill(); } g.fillStyle='#1b130b'; g.fillRect(0,0,w,10); }
 /* 板壁（武具蔵） */ { const c=makeCanvas(256,512),g=c.getContext('2d'); for(let x=0;x<256;x+=32){ grain(g,x,0,32,512,`rgb(${70+rnd()*20|0},${50+rnd()*12|0},${34+rnd()*8|0})`,true); g.fillStyle='rgba(0,0,0,.5)'; g.fillRect(x,0,2,512); for(const y of [60,250,440]){ g.fillStyle='#1a1410'; g.fillRect(x+14,y,4,4); } } g.fillStyle='rgba(0,0,0,.35)'; g.fillRect(0,0,256,40);
@@ -1757,6 +1760,11 @@ function fusumaFrame(g,w,h){ const pw=w/4; g.strokeStyle='#1b130b'; g.lineWidth=
   for(let i=0;i<70;i++){ const x=150+rnd()*300,y=110+rnd()*200; g.fillStyle=pick(['#f6d6de','#f2c4d0','#fbe9ee']); g.beginPath(); g.arc(x,y,5+rnd()*4,0,6.283); g.fill(); }
   for(const [x,y,r,cc] of [[110,450,34,'#d93a4a'],[180,470,28,'#f4f0e6'],[400,440,32,'#c2304a']]){ for(let p=0;p<10;p++){ const a=p/10*6.283; g.fillStyle=cc; g.beginPath(); g.ellipse(x+Math.cos(a)*r*.5,y+Math.sin(a)*r*.5,r*.45,r*.3,a,0,6.283); g.fill(); } g.fillStyle='#2f6a3a'; g.beginPath(); g.ellipse(x+30,y+20,26,10,.4,0,6.283); g.fill(); }
   fusumaFrame(g,512,512); addMat('hanaF',std({map:toTex(c),emissiveMap:toTex(c),emissive:new THREE.Color(0xffffff),emissiveIntensity:.18,roughness:.5,metalness:.25,side:THREE.DoubleSide})); }
+/* 目地漆喰の石垣・梅と桐の襖（本丸御殿の梅之間・桐之間） */ addMat('mejiStone',std({map:toTex(mejiTex()),roughness:.95}));
+{ const mk=(draw)=>{ const c=makeCanvas(512,512),g=c.getContext('2d'); for(let y=0;y<512;y+=32) for(let x=0;x<512;x+=32){ const l=Math.random()*24-12; g.fillStyle=`rgb(${214+l|0},${174+l|0},${82+l*.5|0})`; g.fillRect(x,y,32,32); } draw(g); fusumaFrame(g,512,512); return std({map:toTex(c),emissiveMap:toTex(c),emissive:new THREE.Color(0xffffff),emissiveIntensity:.18,roughness:.5,metalness:.25,side:THREE.DoubleSide}); };
+  const ume=mk(g=>{ g.strokeStyle='#2e2015'; g.lineCap='round'; g.lineWidth=14; g.beginPath(); g.moveTo(40,512); g.bezierCurveTo(90,380,60,300,170,220); g.lineTo(300,170); g.stroke(); g.lineWidth=6; g.beginPath(); g.moveTo(170,220); g.lineTo(140,110); g.moveTo(300,170); g.lineTo(420,200); g.moveTo(300,170); g.lineTo(330,70); g.stroke(); for(let i=0;i<60;i++){ const t=Math.random(),x=60+Math.random()*400,y=60+Math.random()*300; g.fillStyle=((a)=>a[(Math.random()*a.length)|0])(['#fbf6f0','#f3c2cf','#e9a0b4']); for(let k=0;k<5;k++){ const an=k/5*6.283; g.beginPath(); g.arc(x+Math.cos(an)*4,y+Math.sin(an)*4,3.5,0,6.283); g.fill(); } } });
+  const kiri=mk(g=>{ for(let i=0;i<5;i++){ const x=60+i*100,y=300+(i%2)*60; g.fillStyle='#3f6e3a'; for(const [dx,dy,r] of [[0,0,46],[-36,24,34],[36,24,34]]){ g.beginPath(); g.arc(x+dx,y+dy,r,0,6.283); g.fill(); } g.strokeStyle='#2f4a2a'; g.lineWidth=4; g.beginPath(); g.moveTo(x,y-40); g.lineTo(x,y-140); g.stroke(); for(let k=0;k<9;k++){ g.fillStyle=((a)=>a[(Math.random()*a.length)|0])(['#8a5aa8','#a77cc2','#6e4590']); g.beginPath(); g.ellipse(x+(k%3-1)*12,y-150-k*9,7,10,0,0,6.283); g.fill(); } } });
+  for(const [k,m] of [['kmUme',ume],['kmKiri',kiri]]) addMat(k,m); }
 /* 竹虎図（上段の間の金碧画） */ { const L=goldLayers(1024,512),g=L.g; for(let y=0;y<512;y+=32) for(let x=0;x<1024;x+=32){ const l=rnd()*24-12; g.fillStyle=`rgb(${216+l|0},${176+l|0},${84+l*.5|0})`; g.fillRect(x,y,32,32); }
   for(let i=0;i<9;i++){ const x=40+i*115+rnd()*30; g.fillStyle='#3d7a3e'; g.fillRect(x,0,14,512); for(let y=40;y<512;y+=70){ g.fillStyle='#2b5a2c'; g.fillRect(x-2,y,18,4); g.strokeStyle='#3d7a3e'; g.lineWidth=3; g.beginPath(); g.moveTo(x+14,y); g.quadraticCurveTo(x+50,y-20,x+70,y-10); g.stroke(); g.fillStyle='#4a8a48'; g.beginPath(); g.ellipse(x+64,y-12,22,6,-.3,0,6.283); g.fill(); } }
   const tc=makeCanvas(1024,512),T2={c:tc,m:makeCanvas(1024,512),g:tc.getContext('2d')}; T2.k=T2.m.getContext('2d'); drawTiger(T2,330,380,1.25,false); drawTiger(T2,760,400,1.05,true);
@@ -2263,7 +2271,7 @@ const TLV=[
   {name:'3・4階',P:poly8(6.6,5.6,.25),h:7.6,slope:.56,wins:[[2.5,.9,1.2,2.8],[4.9,1.05,1.2,2.8]]},
   {name:'5・6階',P:poly8(4.3,3.8,.25),h:7.2,deck:1.1,wins:[[2.5,.9,1.1,2.6],[4.6,1.5,1.5,2.2]]}];
 /* 小天守（西に連結）: 1・2階／3・4階 */
-const SX={cx:TA.cx-19.5,cz:TA.cz+1.5};
+const SX={cx:TA.cx-19.5,cz:TA.cz+1.5}; const KS_EX=3.4; /* 天守の入口: 小天守の南面の東寄り（大天守との間） */
 const SLV=[{name:'小天守 1・2階',P:poly8(5.6,4.8,.25),h:7.4,slope:.52,wins:[[1.1,1.1,1.2,3],[4.9,1.05,1.2,3]]},{name:'小天守 3・4階',P:poly8(3.8,3.3,.25),h:5.8,wins:[[2.4,.9,1.1,2.4],[4.0,1,1.1,2.4]]}];
 /* 階（内部）: 0=地階（穴蔵）, 1=1階 … 6=6階 */
 const TFL=[
@@ -2277,7 +2285,7 @@ const TFL_TXT={
   '4階の展示「近代の熊本城と熊本地震」。平成28年（2016）の地震で崩れた石垣と、復旧の歩みを紹介します。',
   '5階は、6階の展望フロアへ上る手前の階。窓は外観だけで、館内からは外は見えません（博物館の階）。',
   '最上階の展望フロア。四方の窓から、熊本の市街、金峰山、晴れた日には阿蘇の山々まで見渡せます。'],
- edo:['天守台の石垣の内側の「穴蔵」。兵糧や武具を納める蔵として使われたと考えられます。中は暗く、石の壁に囲まれています。',
+ edo:['大天守と小天守の間にある小天守の地階（穴蔵）が天守の入口。ふだんは台所として使われ、井戸が掘られています。廊下の先は大天守の地階。1階へ上がる石段の上には約1mの段差があり、木の箱段を外すと上へ上がれなくなる仕掛けでした。',
   '大天守の1階。太い柱が並ぶ板の間で、戦いのときには兵が詰める場所でした。窓は突上戸で、外へ跳ね上げて開けます（間取りは想像）。',
   '2階。武具を並べた広い板の間（想像）。窓から鉄砲を撃てるよう、壁には狭間も設けられていました。',
   '3階（屋根裏の階）。外から見ると1つ目の大屋根の中にあたり、窓は屋根の上の高い所にあります。',
@@ -2285,12 +2293,10 @@ const TFL_TXT={
   '5階。2つ目の屋根の中にあたる階です。',
   '最上階。四方の窓の外には廻縁（まわりえん）がめぐり、城下と坪井川、遠くの山々まで見渡せます。殿さまが上ることはまれだったと考えられています（内部は想像）。']};
 function planKeep(era){ const cx=TA.cx,cz=TA.cz,FL=[],ST=[],g0=TZ.g0,ti=(TZ.bw/2-TZ.bat)-.8,tj=(TZ.bd/2-TZ.bat)-.8;
-  /* 入口: 江戸時代は大天守の南の穴蔵口。現代（令和3年の復旧後）は小天守の地階が天守閣の入口で、廊下で大天守の地階へ続く */
-  const KS0={sa:6.8,sb:5.9,sbat:2.4},mod=era==='modern';
-  const E=mod?{cx:SX.cx,x0:SX.cx-1.4,x1:SX.cx+1.4,Z:SX.cz+KS0.sb+KS0.sbat,zIn:SX.cz+KS0.sb-1.2,small:true}:{cx,x0:cx-1.4,x1:cx+1.4,Z:cz+TZ.bd/2,zIn:cz+tj};
-  const r0=[{x0:cx-ti,x1:cx+ti,z0:cz-tj,z1:cz+tj}];
-  if(mod) r0.push({x0:SX.cx+KS0.sa-2,x1:cx-ti+.4,z0:SX.cz-1,z1:SX.cz+1},{x0:SX.cx-KS0.sa+1.3,x1:SX.cx+KS0.sa-1.3,z0:SX.cz-KS0.sb+1.3,z1:SX.cz+KS0.sb-1.3},{x0:E.x0-.1,x1:E.x1+.1,z0:SX.cz+KS0.sb-1.6,z1:E.Z});
-  else r0.push({x0:E.x0-.1,x1:E.x1+.1,z0:cz+tj-.2,z1:E.Z});
+  /* 入口: 大天守と小天守の間、小天守の地階（穴蔵）。江戸時代は台所として使われ、井戸がある。現代も天守閣の入口で、廊下で大天守の地階へ続く */
+  const KS0={sa:6.8,sb:5.9,sbat:2.4},ex=SX.cx+KS_EX;
+  const E={cx:ex,x0:ex-1.4,x1:ex+1.4,Z:SX.cz+KS0.sb+KS0.sbat,zIn:SX.cz+KS0.sb-1.2,small:true};
+  const r0=[{x0:cx-ti,x1:cx+ti,z0:cz-tj,z1:cz+tj},{x0:SX.cx+KS0.sa-2,x1:cx-ti+.4,z0:SX.cz-1,z1:SX.cz+1},{x0:SX.cx-KS0.sa+1.3,x1:SX.cx+KS0.sa-1.3,z0:SX.cz-KS0.sb+1.3,z1:SX.cz+KS0.sb-1.3},{x0:E.x0-.1,x1:E.x1+.1,z0:SX.cz+KS0.sb-1.6,z1:E.Z}];
   FL.push(Object.assign({y:g0,h:TZ.bh,rects:r0,pillars:[]},TFL[0]));
   const L=TLV,L0=L[0].Y,L1=L[1].Y,L2=L[2].Y;
   const ys=[L0,L0+L[0].h/2,L1,L1+L[1].h/2,L2,L2+L[2].h/2],hs=[L[0].h/2,L[0].h/2,L[1].h/2,L[1].h/2,L[2].h/2,L[2].h/2];
@@ -2310,12 +2316,12 @@ const KS=kmTower(KX,SX.cx,TA.y0,SX.cz,SLV,{ishi:true,shs:.8,doors:[{lv:0,side:'e
 const TP=planKeep('edo'); TEN.edo=Object.assign({par:GE},TP); TEN.modern=Object.assign({par:GM},planKeep('modern'));
 { const cx=TA.cx,cz=TA.cz,g0=TZ.g0,bh=TZ.bh,T=TLV;
   /* 天守台（大・小）と、その間をつなぐ石垣 */ const a=TZ.bw/2-TZ.bat,b=TZ.bd/2-TZ.bat;
-  const base=mesh(mushaGeo(a,b,bh+.02,TZ.bat,[{x0:-1.6,x1:1.6,y1:3.4},{f:3,x0:SX.cz-cz-1.25,x1:SX.cz-cz+1.25,y1:3.3}]),wallN,false,true); base.position.set(cx,g0,cz); KX.add(base); mushaCorners(BS.sangi,cx,g0,cz,a,b,bh,TZ.bat);
-  const sa=6.8,sb=5.9,sbat=2.4; const sm=mesh(mushaGeo(sa,sb,bh+.02,sbat,{x0:-1.6,x1:1.6,y1:3.4}),wallN,false,true); sm.position.set(SX.cx,g0,SX.cz); KX.add(sm); mushaCorners(BS.sangi,SX.cx,g0,SX.cz,sa,sb,bh,sbat);
+  const base=mesh(mushaGeo(a,b,bh+.02,TZ.bat,[{f:3,x0:SX.cz-cz-1.25,x1:SX.cz-cz+1.25,y1:3.3}]),wallN,false,true); base.position.set(cx,g0,cz); KX.add(base); mushaCorners(BS.sangi,cx,g0,cz,a,b,bh,TZ.bat);
+  const sa=6.8,sb=5.9,sbat=2.4; const sm=mesh(mushaGeo(sa,sb,bh+.02,sbat,{x0:KS_EX-1.6,x1:KS_EX+1.6,y1:3.4}),wallN,false,true); sm.position.set(SX.cx,g0,SX.cz); KX.add(sm); mushaCorners(BS.sangi,SX.cx,g0,SX.cz,sa,sb,bh,sbat);
   /* 大小の天守台をつなぐ石垣（中を現代の廊下が通る） */ box(BS.stone,SX.cx+sa-.4,cx-a+.4,g0,g0+bh,SX.cz-3.4,SX.cz-1.8); box(BS.stone,SX.cx+sa-.4,cx-a+.4,g0,g0+bh,SX.cz+1.8,SX.cz+3.4); box(BS.stone,SX.cx+sa-.4,cx-a+.4,g0+3.6,g0+bh,SX.cz-1.8,SX.cz+1.8);
   for(const [x0,x1,z0,z1] of [[cx-a,cx+a,cz-b,cz+b],[SX.cx-sa,SX.cx+sa,SX.cz-sb,SX.cz+sb],[SX.cx+sa-.4,cx-a+.4,SX.cz-3.4,SX.cz+3.4]]){ const m=mesh(boxUVGeo(x1-x0,.3,z1-z0,3,3),M.stoneK,false,true); m.position.set((x0+x1)/2,g0+bh+.12,(z0+z1)/2); KX.add(m); }
   block(cx-TZ.bw/2+.4,cz-TZ.bd/2+.4,cx+TZ.bw/2-.4,cz+TZ.bd/2-.8,'castle'); block(SX.cx-sa-sbat+.4,SX.cz-sb-sbat+.4,SX.cx+sa,SX.cz+sb+sbat-.4,'castle'); block(SX.cx+sa-1,SX.cz-3.6,cx-a+1,SX.cz+3.6,'castle');
-  /* 穴蔵への入口の通路（石の壁と天井） */ const E=TP.entry; for(const s of [-1,1]) box(BS.stone,cx+s*1.6-(s>0?0:.7),cx+s*1.6+(s>0?.7:0),g0,g0+3.4,E.zIn,E.Z+.2); box(BS.stoneK,cx-2.3,cx+2.3,g0+3.4,g0+3.9,E.zIn,E.Z-1);
+  /* 大天守の南面には入口はない（入口は小天守の地階） */
   /* 渡廊下（大天守と小天守をつなぐ） */ { const x0=SX.cx+SLV[0].P[1][0]-.1,x1=cx-9+.1,L=x1-x0,mx=(x0+x1)/2; for(const s of [-1,1]) kmSide(KX,mx,TA.y0,SX.cz+s*2.2,L,4.2,s>0?0:Math.PI,[]); const r=mesh(gableRoofGeo(L+1.4,6.2,1.6,.8,.3),M.roof); r.position.set(mx,TA.y0+4.2,SX.cz); KX.add(r); const e=mesh(gableEndsGeo(L,4.4,1.5),M.plaster); e.position.set(mx,TA.y0+4.2,SX.cz); KX.add(e); }
   /* 破風: 1重目の東西に千鳥破風、南に唐破風、2重目の南北に千鳥破風（大天守）。小天守の南に唐破風 */
   const mats={roof:M.roof,gable:M.plaster,gold:false,orn:false,trim:M.black};
@@ -2327,8 +2333,7 @@ const TP=planKeep('edo'); TEN.edo=Object.assign({par:GE},TP); TEN.modern=Object.
       for(const [yy,hh,dd] of [[.95,.1,.12],[.5,.07,.1],[-.12,.2,.08]]){ const r=mesh(new THREE.BoxGeometry(len,hh,dd),M.lacquer,false,false); r.position.set(cx+mx,y+yy,cz+mz); r.rotation.y=ry; KX.add(r); }
       const n=Math.max(1,Math.round(len/1.1)); for(let q2=0;q2<=n;q2++){ const t=q2/n,pp=mesh(new THREE.BoxGeometry(.09,.95,.09),M.lacquer,false,false); pp.position.set(cx+p[0]+(q[0]-p[0])*t,y+.48,cz+p[1]+(q[1]-p[1])*t); KX.add(pp); } }
     for(const [x,z] of L.P){ const l=Math.hypot(x,z),q=mesh(new THREE.BoxGeometry(.22,.4,L.deck+.3),M.black,false,false); q.position.set(cx+x+x/l*L.deck/2,y-.42,cz+z+z/l*L.deck/2); q.rotation.y=Math.atan2(x,z); KX.add(q); } }
-  /* 入口（地下の穴蔵口）の扉と看板 */ { const E=TP.entry; for(const s of [-1,1]) BS.darkwood.add(new THREE.BoxGeometry(.3,3.4,.3),TM(cx+s*1.75,g0+1.7,E.Z-.6)); BS.darkwood.add(new THREE.BoxGeometry(3.8,.4,.4),TM(cx,g0+3.5,E.Z-.6));
-    for(const s of [-1,1]){ const d=new THREE.Group(); d.position.set(cx+s*2.4,g0,E.Z-.3); d.rotation.y=s*.35; KX.add(d); const lf=mesh(new THREE.BoxGeometry(1.4,3.1,.12),M.darkwood); lf.position.y=1.55; d.add(lf); for(const yy of [.6,1.6,2.6]){ const k=mesh(new THREE.BoxGeometry(1.42,.1,.14),M.black); k.position.y=yy; d.add(k); } } } }
+  /* 小天守の地階の入口（暖簾は現代のみ） */ }
 B=BS; curSet=BSETS.shared;
 /* ---------- 内部（現代: 博物館 / 江戸時代: 板の間） ---------- */
 function slabHoles(bt,fp,holes,y,th){ const xs=[fp.x0,fp.x1],zs=[fp.z0,fp.z1]; for(const h of holes){ if(!h) continue; xs.push(Math.max(fp.x0,Math.min(fp.x1,h.x0)),Math.max(fp.x0,Math.min(fp.x1,h.x1))); zs.push(Math.max(fp.z0,Math.min(fp.z1,h.z0)),Math.max(fp.z0,Math.min(fp.z1,h.z1))); }
@@ -2338,18 +2343,25 @@ const KXI=new THREE.Group(); GE.add(KXI);
 function keepInterior(era){ const T=TEN[era],{cx,cz,FL,ST}=T,mod=era==='modern',WB=F=>F&&F.rects&&{rects:F.rects}; const BI=mod?BM:mkB(); B=BI; curSet=mod?BSETS.modern:BSETS.edo;
   /* 地階（穴蔵）: 石の壁、柱、礎石 */
   { const F=FL[0],y=F.y,ti=(TZ.bw/2-TZ.bat),tj=(TZ.bd/2-TZ.bat),E=T.entry; box(B.stone,cx-ti,cx+ti,y-.3,y,cz-tj,cz+tj);
-    const wz0=SX.cz-cz-1.2,wz1=SX.cz-cz+1.2; for(const [x0,x1,z0,z1] of (mod?[[-ti,-ti+.8,-tj,wz0],[-ti,-ti+.8,wz1,tj]]:[[-ti,-ti+.8,-tj,tj]]).concat([[ti-.8,ti,-tj,tj],[-ti,ti,-tj,-tj+.8],[-ti,-1.6,tj-.8,tj],[1.6,ti,tj-.8,tj]])) box(B.stone,cx+x0,cx+x1,y,y+TZ.bh-.3,cz+z0,cz+z1);
-    if(mod){ box(B.stone,cx-ti,cx-ti+.8,y+3.2,y+TZ.bh-.3,cz+wz0,cz+wz1); /* 現代は大天守の南の穴蔵口を閉じる（入口は小天守） */ box(B.darkwood,cx-1.7,cx+1.7,y,y+3.4,cz+TZ.bd/2-1.4,cz+TZ.bd/2-1.25);
-      /* 小天守の地階（入口）と、大天守の地階へ続く廊下 */ const S=SX,sa=6.8,sb=5.9,qa=sa-1.3,qb=sb-1.3,H=3.4;
+    const wz0=SX.cz-cz-1.2,wz1=SX.cz-cz+1.2; for(const [x0,x1,z0,z1] of [[-ti,-ti+.8,-tj,wz0],[-ti,-ti+.8,wz1,tj],[ti-.8,ti,-tj,tj],[-ti,ti,-tj,-tj+.8],[-ti,ti,tj-.8,tj]]) box(B.stone,cx+x0,cx+x1,y,y+TZ.bh-.3,cz+z0,cz+z1);
+    box(B.stone,cx-ti,cx-ti+.8,y+3.2,y+TZ.bh-.3,cz+wz0,cz+wz1);
+    { /* 小天守の地階（穴蔵）＝天守の入口と、大天守の地階へ続く廊下 */ const S=SX,sa=6.8,sb=5.9,qa=sa-1.3,qb=sb-1.3,H=3.4,ex=KS_EX;
       box(B.stone,S.cx-qa-.8,S.cx+qa+.8,y-.3,y,S.cz-qb-.8,S.cz+qb+.8); B.floor.add(boxUVGeo(2*qa,.06,2*qb,2.4,2.4),TM(S.cx,y+.03,S.cz));
-      for(const [x0,x1,z0,z1] of [[-qa-.8,-qa,-qb,qb],[qa,qa+.8,-qb,-1.2],[qa,qa+.8,1.2,qb],[-qa-.8,qa+.8,-qb-.8,-qb],[-qa-.8,-1.6,qb,qb+.8],[1.6,qa+.8,qb,qb+.8]]) box(B.stone,S.cx+x0,S.cx+x1,y,y+H,S.cz+z0,S.cz+z1);
+      for(const [x0,x1,z0,z1] of [[-qa-.8,-qa,-qb,qb],[qa,qa+.8,-qb,-1.2],[qa,qa+.8,1.2,qb],[-qa-.8,qa+.8,-qb-.8,-qb],[-qa-.8,ex-1.6,qb,qb+.8],[ex+1.6,qa+.8,qb,qb+.8]]) box(B.stone,S.cx+x0,S.cx+x1,y,y+H,S.cz+z0,S.cz+z1);
       box(B.stoneK,S.cx-qa-.8,S.cx+qa+.8,y+H,y+H+.4,S.cz-qb-.8,S.cz+qb+.8);
-      /* 入口の通路 */ for(const s of [-1,1]) box(B.stone,S.cx+s*1.6-(s>0?0:.7),S.cx+s*1.6+(s>0?.7:0),y,y+H,S.cz+qb,S.cz+sb+2.6); box(B.stoneK,S.cx-2.3,S.cx+2.3,y+H,y+H+.4,S.cz+qb,S.cz+sb+2.4);
-      /* 廊下 */ const ax=S.cx+qa,bx=cx-ti; for(const z of [S.cz-1.2-.6,S.cz+1.2]) box(B.stone,ax,bx,y,y+3.2,z,z+.6); box(B.stoneK,ax,bx,y+3.2,y+3.6,S.cz-1.8,S.cz+1.8); B.floor.add(boxUVGeo(bx-ax,.06,2.4,2.4,2.4),TM((ax+bx)/2,y+.03,S.cz)); B.lampIn.add(new THREE.BoxGeometry(1.2,.1,.4),TM((ax+bx)/2,y+3.1,S.cz));
-      /* 井戸（石組みの井戸枠） */ { const wx=S.cx-2.6,wz=S.cz-2.4; B.stone.add(new THREE.CylinderGeometry(.85,.9,.75,16,1,true),TM(wx,y+.37,wz)); B.stoneK.add(new THREE.CylinderGeometry(.95,.95,.12,16),TM(wx,y+.78,wz)); B.black.add(new THREE.CylinderGeometry(.7,.7,.05,16),TM(wx,y+.5,wz)); B.darkwood.add(new THREE.BoxGeometry(2.2,.12,.12),TM(wx,y+1.9,wz)); for(const s of [-1,1]) B.darkwood.add(new THREE.BoxGeometry(.12,1.9,.12),TM(wx+s*1.05,y+.95,wz)); coll(F,wx-1.1,wx+1.1,wz-1.1,wz+1.1); }
-      /* 制震ダンパー（X字の鋼材） */ { const dz2=S.cz-qb+.15,L=Math.hypot(4,2.8),an=Math.atan2(2.8,4); for(const s of [-1,1]){ const m=new THREE.Matrix4().makeRotationZ(s*an); m.setPosition(S.cx+2.4,y+1.6,dz2); B.black.add(new THREE.BoxGeometry(L,.22,.22),m); } B.black.add(new THREE.BoxGeometry(4.3,.25,.25),TM(S.cx+2.4,y+.15,dz2)); B.black.add(new THREE.BoxGeometry(4.3,.25,.25),TM(S.cx+2.4,y+3.05,dz2)); }
-      /* 台所だった穴蔵の展示（竈） */ box(B.stoneK,S.cx+2,S.cx+3.6,y,y+.8,S.cz+1,S.cz+2.2); coll(F,S.cx+2,S.cx+3.6,S.cz+1,S.cz+2.2); B.lampIn.add(new THREE.BoxGeometry(1.6,.1,.5),TM(S.cx,y+H-.1,S.cz)); B.lampIn.add(new THREE.BoxGeometry(.3,.4,.3),TM(S.cx-qa+.3,y+2.2,S.cz+2)); }
-    else { /* 江戸時代: 小天守の地階の口は戸を閉めておく */ box(B.darkwood,SX.cx-1.75,SX.cx+1.75,y,y+3.4,SX.cz+5.9+1.9,SX.cz+5.9+2.05); }
+      /* 入口の通路 */ for(const s of [-1,1]) box(B.stone,S.cx+ex+s*1.6-(s>0?0:.7),S.cx+ex+s*1.6+(s>0?.7:0),y,y+H,S.cz+qb,S.cz+sb+2.6); box(B.stoneK,S.cx+ex-2.3,S.cx+ex+2.3,y+H,y+H+.4,S.cz+qb,S.cz+sb+2.4);
+      /* 廊下 */ const ax=S.cx+qa,bx=cx-ti; for(const z of [S.cz-1.2-.6,S.cz+1.2]) box(B.stone,ax,bx,y,y+3.2,z,z+.6); box(B.stoneK,ax,bx,y+3.2,y+3.6,S.cz-1.8,S.cz+1.8); B.floor.add(boxUVGeo(bx-ax,.06,2.4,2.4,2.4),TM((ax+bx)/2,y+.03,S.cz)); B.lampIn.add(new THREE.BoxGeometry(mod?1.2:.3,.1,mod?.4:.3),TM((ax+bx)/2,y+(mod?3.1:2.2),S.cz+(mod?0:1)));
+      /* 井戸（石組みの井戸枠と釣瓶） */ { const wx=S.cx-2.6,wz=S.cz-2.4; B.stone.add(new THREE.CylinderGeometry(.85,.9,.75,16,1,true),TM(wx,y+.37,wz)); B.stoneK.add(new THREE.CylinderGeometry(.95,.95,.12,16),TM(wx,y+.78,wz)); B.black.add(new THREE.CylinderGeometry(.7,.7,.05,16),TM(wx,y+.5,wz)); B.darkwood.add(new THREE.BoxGeometry(2.2,.12,.12),TM(wx,y+1.9,wz)); for(const s of [-1,1]) B.darkwood.add(new THREE.BoxGeometry(.12,1.9,.12),TM(wx+s*1.05,y+.95,wz)); coll(F,wx-1.1,wx+1.1,wz-1.1,wz+1.1); }
+      /* 台所（竈） */ box(B.stoneK,S.cx-4.8,S.cx-3.2,y,y+.8,S.cz+1,S.cz+2.4); box(B.black,S.cx-4.5,S.cx-3.5,y+.8,y+.86,S.cz+1.3,S.cz+2.1); coll(F,S.cx-4.8,S.cx-3.2,S.cz+1,S.cz+2.4);
+      if(mod){ /* 制震ダンパー（令和の復旧で付けたX字の鋼材） */ const dz2=S.cz-qb+.15,L=Math.hypot(4,2.8),an=Math.atan2(2.8,4); for(const s of [-1,1]){ const m=new THREE.Matrix4().makeRotationZ(s*an); m.setPosition(S.cx+2.4,y+1.6,dz2); B.black.add(new THREE.BoxGeometry(L,.22,.22),m); } B.black.add(new THREE.BoxGeometry(4.3,.25,.25),TM(S.cx+2.4,y+.15,dz2)); B.black.add(new THREE.BoxGeometry(4.3,.25,.25),TM(S.cx+2.4,y+3.05,dz2));
+        B.lampIn.add(new THREE.BoxGeometry(1.6,.1,.5),TM(S.cx,y+H-.1,S.cz)); B.lampIn.add(new THREE.BoxGeometry(.3,.4,.3),TM(S.cx-qa+.3,y+2.2,S.cz+2));
+        /* 入口の暖簾: 左に細川家の九曜紋、右に加藤家の蛇の目紋 */ { const c=makeCanvas(512,192),g=c.getContext('2d'); g.fillStyle='#1d2a44'; g.fillRect(0,0,512,192); g.fillStyle='#14203a'; g.fillRect(253,0,6,192); g.fillStyle='#f2ece0';
+          const R=46,cxA=128,cyA=100; g.beginPath(); g.arc(cxA,cyA,R*.36,0,7); g.fill(); for(let k=0;k<8;k++){ const a=k/8*Math.PI*2; g.beginPath(); g.arc(cxA+Math.cos(a)*R*.78,cyA+Math.sin(a)*R*.78,R*.24,0,7); g.fill(); }
+          g.beginPath(); g.arc(384,100,R,0,7); g.arc(384,100,R*.52,0,7,true); g.fill('evenodd');
+          const t=toTex(c,true,false),nm=new THREE.MeshStandardMaterial({map:t,roughness:.95,side:THREE.DoubleSide}); const n=new THREE.Mesh(new THREE.PlaneGeometry(3.1,1.15),nm); n.position.set(S.cx+ex,y+2.75,S.cz+sb+.7); GM.add(n); } }
+      else { /* 江戸時代: 台所の荷（俵・樽）と行灯 */ for(const [sp,x,z] of [['km_tawara',-4.2,-3.4],['km_taru',-4.6,3.4],['km_hako',3.8,-3.2]]){ DECO_KEEP.push([sp,S.cx+x,y,S.cz+z]); coll(F,S.cx+x-.8,S.cx+x+.8,S.cz+z-.6,S.cz+z+.6); } B.lampIn.add(new THREE.BoxGeometry(.3,.5,.3),TM(S.cx+ex-2.4,y+.25,S.cz+qb-.6));
+        /* 1階へ上がる石段の上の約1mの段差に掛けた木の箱段（敵が入れば外して上へ上がれなくする） */ { const s0=ST[0],d0=Math.sign(s0.to-s0.from),y1=FL[1].y; box(B.darkwood,s0.x0-.05,s0.x1+.05,y1-1.0,y1-.04,Math.min(s0.to,s0.to-d0*1.1),Math.max(s0.to,s0.to-d0*1.1)); for(let k=1;k<3;k++) box(B.black,s0.x0-.06,s0.x1+.06,y1-1.0+k*.33,y1-1.0+k*.33+.03,Math.min(s0.to,s0.to-d0*1.1)-.01,Math.max(s0.to,s0.to-d0*1.1)+.01); } }
+    }
     if(mod){ box(B.kmHall,cx-ti+.9,cx-ti+1,y,y+3.2,cz-tj+1,cz+wz0-.2); box(B.kmHall,cx-ti+.9,cx-ti+1,y,y+3.2,cz+wz1+.2,cz+tj-1); B.lampIn.add(new THREE.BoxGeometry(2,.1,.6),TM(cx-3,y+3.6,cz)); B.lampIn.add(new THREE.BoxGeometry(2,.1,.6),TM(cx+3,y+3.6,cz+3)); B.floor.add(boxUVGeo(2*ti-1.8,.06,2*tj-1.8,2.4,2.4),TM(cx,y+.03,cz)); }
     for(let i=-2;i<=2;i++) for(let j=-1;j<=1;j++){ const x=cx+i*3.4,z=cz+j*4; if(ST[0]&&inR(wellR(ST[0],null),x,z,.6)) continue; B.stoneK.add(boxUVGeo(.8,.16,.8,1,1),TM(x,y+.08,z)); B.darkwood.add(new THREE.BoxGeometry(.42,TZ.bh-.3,.42),TM(x,y+(TZ.bh-.3)/2,z)); F.pillars.push([x,z]); }
     B.lampIn.add(new THREE.BoxGeometry(.3,.4,.3),TM(cx-ti+1,y+2.2,cz)); B.lampIn.add(new THREE.BoxGeometry(.3,.4,.3),TM(cx+ti-1,y+2.2,cz-3));
@@ -2413,10 +2425,18 @@ dobei(-36,108,100,108,3.1,'castle',0);
 const GOT={cx:4,cz:10,w:40,d:14,y:32.5}; const GOTG=new THREE.Group(); scene.add(GOTG);
 { const g=GOT,x0=g.cx-g.w/2-.7,x1=g.cx+g.w/2+.7,z0=g.cz-g.d/2-.7,z1=g.cz+g.d/2+.7,y0=PL.honmaru.H;
   box(BS.stone,x0,5.4,y0-.2,g.y,z0,z1); box(BS.stone,12.6,x1,y0-.2,g.y,z0,z1); box(BS.stoneK,5.4,12.6,g.y-.6,g.y,z0,z1);
-  for(const x of [5.4,12.6]) box(BS.stone,x-.6,x,22,g.y,z0,18.2); box(BS.stone,5.4-.6,12.6+.6,g.y-.6,g.y+.01,z0-.01,z0+.4);
+  for(const x of [5.4,12.6]){ box(BS.mejiStone,x-.6,x,22,g.y,z0,11); box(BS.mejiStone,x-.6,x,22,g.y,17,18.2); box(BS.mejiStone,x-.6,x,29.8,g.y,11,17); } box(BS.stone,5.4-.6,12.6+.6,g.y-.6,g.y+.01,z0-.01,z0+.4);
   { const BG=mkB(),oB=B; B=BG; goten2(g.cx,g.cz,g.w,g.d,4.6,{y:g.y,par:GOTG,kara:-1,noBlock:true}); goten2(g.cx-12,g.cz-1,12,6,3.4,{y:g.y,par:GOTG,noBlock:true}); for(const k in BG) BG[k].build(M[k],true,GOTG); B=oB; }
-  block(x0,z0,5.4,z1,'castle'); block(12.6,z0,x1,z1,'castle');
-  /* 御殿の北の石段 */ for(let k=0;k<4;k++) BS.stoneK.add(boxUVGeo(3,.62,.4,1.2,1.2),TM(-6,y0+.31+k*.62,z0-.2-(3-k)*.4)); }
+  /* 闇り通路はT字: 南の闇り御門から北の本丸へ抜ける通路と、御殿の床下を東西にのびる通路（地下に御殿の玄関がある）。距離は縮めてある */
+  const KZ0=11,KZ1=17,KX0=-14,KX1=22,KY=27.3,KC=29.8;
+  block(x0,z0,5.4,KZ0,'castle'); block(x0,KZ1,5.4,z1,'castle'); block(x0,KZ0,KX0,KZ1,'castle'); block(12.6,z0,x1,KZ0,'castle'); block(12.6,KZ1,x1,z1,'castle'); block(KX1,KZ0,x1,KZ1,'castle');
+  for(const [a,b] of [[KX0,4.8],[13.2,KX1]]){ box(BS.mejiStone,a,b,KY,KC,KZ0-.6,KZ0); box(BS.mejiStone,a,b,KY,KC,KZ1,KZ1+.6); box(BS.stoneK,a,b,KC,KC+.2,KZ0-.6,KZ1+.6); box(BS.stone,a,b,KY-.3,KY,KZ0,KZ1); }
+  box(BS.mejiStone,KX0-.6,KX0,KY,KC,KZ0,KZ1); box(BS.mejiStone,KX1,KX1+.6,KY,KC,KZ0,KZ1);
+  /* 地下の玄関（式台）: 北の壁に御殿へ上がる口 */ { const gx=-6; box(BS.darkwood,gx-2.4,gx+2.4,KY,KY+.38,KZ0,KZ0+1.3); box(BS.woodGrain,gx-2.3,gx+2.3,KY+.38,KY+.42,KZ0,KZ0+1.2); for(const s2 of [-1,1]) box(BS.darkwood,gx+s2*1.4-.12,gx+s2*1.4+.12,KY,KC,KZ0-.1,KZ0+.14); box(BS.darkwood,gx-1.6,gx+1.6,KC-.5,KC-.2,KZ0-.1,KZ0+.16); box(BS.inDark,gx-1.25,gx+1.25,KY+.4,KC-.5,KZ0-.62,KZ0-.58);
+    for(let k=0;k<5;k++) box(BS.darkwood,gx-1.2,gx+1.2,KY+.4+k*.42,KY+.46+k*.42,KZ0-.6+k*0,KZ0-.6+.01); }
+  /* 闇り御門（唐破風の屋根をのせた門）: 通路の南の口 */ { const gz=18.6,gy=22+(40-gz)/38*8; for(const xx of [5.8,12.2]) box(BS.darkwood,xx-.25,xx+.25,gy-.3,gy+4.4,gz-.25,gz+.25); box(BS.darkwood,5.4,12.6,gy+4.1,gy+4.5,gz-.3,gz+.3); box(BS.black,5.6,12.4,gy+3.6,gy+3.8,gz-.28,gz+.28);
+    karahafu(GOTG,9,gy+3.9,gz+.4,0,8.6,{roof:M.roof,gable:M.plaster,gold:false,orn:false,trim:M.black}); }
+  }
 /* 数寄屋丸二階御広間（平成元年（1989）復元）と、西櫓御門 */
 yagura(-71,8,14,8,Math.PI/2,{y:PL.sukiya.H,par:scene,wall:'kmWB',h1:4.2,h2:3.4});
 gate(-79,28,5.6,Math.PI/2,{y:PL.sukiya.H,h:5,par:scene});
@@ -2501,12 +2521,24 @@ B=BS; curSet=BSETS.shared;
 /* ================= 中に入れる建物 ================= */
 B=BE;
 /* 本丸御殿 昭君之間・若松之間（江戸時代）: 金の障壁画の大広間 */
-{ const R=RD.goten=mkRoom(Object.assign({era:'edo'},doorAt(-6,GOT.cz-GOT.d/2-.7,0,-1),roomTxt('本丸御殿 昭君之間','ほんまるごてん しょうくんのま','本丸御殿でもっとも格式の高い部屋。中国・漢の時代の王昭君の物語を描いた金の障壁画で飾られていたと伝わります（ここに並ぶ松・桜・鶴・竹の襖絵は再現のための想像の絵）。「昭君」は「将軍」の隠語で、豊臣秀頼をかくまうための部屋だったという言い伝えもあります（真偽は不明）。',[['完成','慶長15年（1610）ごろ'],['焼失','明治10年（1877）'],['復元','平成20年（2008）'],['伝承','秀頼をかくまう部屋']])));
-  const w=20,d=12,h=4.6; shell(R,w,d,h,{floor:'tatami',ftile:1.8,wall:'kin',front:'shoji',ceil:'kinpaku',ctile:2.4,door:2.4,doorH:2.6,lamps:4}); pillarsRow(R,'lacquer',w,d,h,3,true); nageshi(R,'lacquer',w,d,2.9);
-  fusumaWall(R,w,d,2.85,3.2,['kmMatsuL','kmMatsuR','kmSakuraL','kmSakuraR','kmTsuru','kmTake','kmSakura2L','kmSakura2R']); coffer(R,w,d,h,2,['kinpaku','greenP','kinpaku']);
-  ranmaRow(R,w,d,2.95,3.75,3.4,['km_ranma_matsu','rm_kin_hoo','km_ranma_nami','rm_kin_botan','rm_kin_tsuru']); /* 熊本専用の欄間に、お城さんぽ共通の金の欄間（鳳凰・牡丹・松に鶴）をまぜて華麗に */
-  rb(R,'tatami',-5,5,0,.4,-d/2+.2,-d/2+3.4,true,1.8); rb(R,'lacquer',-5,5,.36,.42,-d/2+3.35,-d/2+3.45);
-  rg(R,'kmByobu',new THREE.BoxGeometry(6,1.7,.05),0,1.25,-d/2+.6); }
+{ /* 地下の玄関（闇り通路の式台）から階段を上がると鶴之間。西に大台所、東へ梅之間・桜之間・桐之間と格式が上がり、いちばん奥が昭君之間 */
+  const w=50,d=11,h=4.6,dx=-9;
+  const R=RD.goten=mkRoom(Object.assign({era:'edo'},doorAt(-6,11,0,1),roomTxt('本丸御殿','ほんまるごてん','慶長15年（1610）ごろ加藤清正が建て、細川忠利が増築・改修した御殿。藩主の対面や儀式、政務の場でした。闇り通路の地下の玄関から階段を上がると控えの「鶴之間」。東へ「梅之間」「桜之間」「桐之間」と進むほど天井や襖絵の格式が上がり、いちばん奥が金箔と極彩色の障壁画の「昭君之間」です。「昭君」は「将軍」の隠語で、豊臣秀頼をかくまう部屋だったという言い伝えもあります（真偽は不明）。西の「大台所（イロリ之間）」は吹き抜けで、長さ約12mの赤松の丸太梁が渡されていました（ここでは天井の高さと距離を縮め、襖絵は再現のための想像の絵）。',[['完成','慶長15年（1610）ごろ'],['入口','闇り通路の地下の玄関（式台）'],['部屋','大台所・鶴之間・梅之間・桜之間・桐之間・昭君之間'],['焼失','明治10年（1877）'],['伝承','秀頼をかくまう部屋']])));
+  shell(R,w,d,h,{floor:'tatami',ftile:1.8,wall:'kin',front:'shoji',ceil:'darkwood',door:2.4,doorH:2.6,doorX:dx,lamps:0}); R.spawn=[R.ox+dx,R.oz+d/2-2.2,0];
+  pillarsRow(R,'lacquer',w,d,h,3,true); nageshi(R,'lacquer',w,d,2.9);
+  /* 地下の玄関へ下りる階段（戸口の外） */ for(let k=0;k<6;k++) rb(R,'darkwood',dx-1.2,dx+1.2,-.3-k*.42,-k*.42,d/2+.2+k*.45,d/2+.65+k*.45);
+  rb(R,'inDark',dx-1.3,dx+1.3,-2.6,0,d/2+3,d/2+3.1);
+  /* 部屋の区切り（襖。中央に通り口） */ const parts=[[-13,'woodGrain'],[-5,'kmTake'],[3,'kmSakuraL'],[11,'kmKiri'],[18,'kmMatsuL']];
+  for(const [x,mat] of parts){ for(const [z0,z1] of [[-d/2,-1.2],[1.2,d/2]]){ rb(R,mat,x-.06,x+.06,0,2.9,z0,z1,true); } rb(R,'lacquer',x-.1,x+.1,2.9,3.05,-d/2,d/2); rb(R,'darkwood',x-.05,x+.05,3.05,h,-d/2,d/2); }
+  const back=(x0,x1,keys)=>{ let k=0; for(let x=x0+.15;x<x1-.6;x+=2){ const x2=Math.min(x1-.15,x+2); rg(R,keys[k++%keys.length],new THREE.BoxGeometry(x2-x-.3,2.85,.03),(x+x2)/2,1.45,-d/2+.03); } };
+  back(-13,-5,['kmTsuru']); back(-5,3,['kmUme']); back(3,11,['kmSakuraL','kmSakuraR']); back(11,18,['kmKiri']); back(18,25,['kmMatsuL','kmMatsuR','kmSakura2L','kmSakura2R']);
+  /* 天井: 奥へ行くほど格の高い天井。昭君之間は金箔の格天井 */ rb(R,'woodGrain',-13,11,h-.06,h-.02,-d/2,d/2); rb(R,'kinpaku',11,18,h-.06,h-.02,-d/2,d/2);
+  for(let x=18.5;x<25;x+=1.3) rb(R,'lacquer',x-.05,x+.05,h-.25,h-.05,-d/2,d/2); for(let z=-d/2+.6;z<d/2;z+=1.3) rb(R,'lacquer',18,25,h-.25,h-.05,z-.05,z+.05); rb(R,'kinpaku',18,25,h-.04,h,-d/2,d/2);
+  /* 昭君之間の上段と屏風 */ rb(R,'tatami',20,25,0,.4,-d/2+.2,-d/2+4,true,1.8); rb(R,'lacquer',20,25,.36,.42,-d/2+3.95,-d/2+4.05); rg(R,'kmByobu',new THREE.BoxGeometry(4.6,1.7,.05),22.5,1.25,-d/2+.6);
+  /* 大台所（イロリ之間）: 板の間・二つの囲炉裏・赤松の丸太梁 */ rb(R,'woodGrain',-w/2,-13,0,.03,-d/2,d/2);
+  for(const x of [-21,-16.5]){ rb(R,'darkwood',x-1,x+1,0,.12,-.8,.8,true); rb(R,'stoneK',x-.8,x+.8,.12,.14,-.6,.6); rg(R,'darkwood',new THREE.BoxGeometry(.05,2.6,.05),x,h-1.6,0); rg(R,'black',new THREE.CylinderGeometry(.22,.26,.26,12),x,1.15,0); }
+  { const g=new THREE.CylinderGeometry(.42,.5,12,12); g.rotateZ(Math.PI/2); rg(R,'darkwood',g,-19,h-.6,0); }
+  R.zones=[[-w/2,-13,'本丸御殿 大台所（イロリ之間）'],[-13,-5,'本丸御殿 鶴之間'],[-5,3,'本丸御殿 梅之間'],[3,11,'本丸御殿 桜之間'],[11,18,'本丸御殿 桐之間'],[18,w/2,'本丸御殿 昭君之間']]; }
 /* 城下の町家（江戸時代） */
 { const m=pickMachi(-40,190),dd=machiDoor(m); const R=RD.machi=mkRoom(Object.assign({era:'edo'},dd,roomTxt('城下の町家','じょうかの まちや','古町の商家。加藤清正は城下を碁盤の目に町割りし、白川や坪井川の舟運を整えて商いを盛んにしたと伝わります。間口が狭く奥に長い町家が通りに並びました。',[['町','古町'],['造り','間口が狭く奥に長い']])));
   const w=6.4,d=11,h=3.6; shell(R,w,d,h,{floor:'tsuchi',wall:'tsuchi',front:'woodGrain',ceil:'woodGrain',door:1.6,doorX:-2,doorMat:'noren',lamps:2});
@@ -2573,9 +2605,9 @@ B=BS;
 /* ================= 名所 ================= */
 const SPOTS=[
   {id:'tenshu',name:'天守閣（大天守・小天守）',kana:'てんしゅかく',at:[8,-26],pos:[8,-2],look:[8,56,-26],q:'Kumamoto castle keep',
-   text:'加藤清正が築いた大天守（外観3重・内部6階地下1階）と小天守。明治10年（1877）の西南戦争の直前に焼け、昭和35年（1960）に外観を復元しました。平成28年（2016）の熊本地震で被災し、令和3年（2021）に復旧。中は博物館で、最上階から熊本の街を一望できます。天守台の南の入口から入れます。',
+   text:'加藤清正が築いた大天守（外観3重・内部6階地下1階）と小天守。明治10年（1877）の西南戦争の直前に焼け、昭和35年（1960）に外観を復元しました。平成28年（2016）の熊本地震で被災し、令和3年（2021）に復旧。中は博物館で、最上階から熊本の街を一望できます。入口は大天守と小天守の間、小天守の地階（穴蔵）で、細川家の九曜紋と加藤家の蛇の目紋の大きな暖簾がかかっています。',
    meta:[['築城','慶長12年（1607）ごろ完成と伝わる'],['焼失','明治10年（1877）2月19日'],['復元','昭和35年（1960）・令和3年（2021）復旧'],['構造','大天守 外観3重6階地下1階']],
-   edo:{text:'黒い下見板張りの壁に、白い破風が映える大天守と小天守。慶長12年（1607）ごろに完成したと伝わります。中に入って最上階まで上れます（内部の間取りは想像）。'}},
+   edo:{text:'黒い下見板張りの壁に、白い破風が映える大天守と小天守。大小の天守を続櫓でつないだ連結式で、大天守台は加藤清正が慶長4〜5年（1599〜1600）ごろ、小天守台は2代忠広が慶長16〜寛永元年（1611〜1624）ごろに築いたことが調査でわかっています。寛永2年（1625）の大地震で大きく傷み、寛永9年（1632）に入った細川家が修復しました。泰平の世の天守は、政務の場の本丸御殿とは別の、武器庫と非常時の拠点です。入口は小天守の地階（穴蔵）です（内部の間取りは想像）。',meta:[['完成','慶長12年（1607）ごろ'],['形式','連結式（大天守・小天守・続櫓）'],['入口','小天守の地階（穴蔵・台所）'],['籠城の備え','井戸120か所、干瓢や芋茎を編みこんだ畳床（伝承）']]}},
   {id:'musha',name:'武者返しの石垣',kana:'むしゃがえし',at:[-40,-30],pos:[-24,-12],look:[-40,28,-30],q:'Kumamoto castle mushagaeshi stone wall',
    text:'下はゆるやかで、上へいくほど垂直に反り立つ石垣。登ろうとした武者もはね返されるとして「武者返し」と呼ばれます。加藤清正の家臣の石工集団が築いたといわれ、天守台や本丸のまわりでその反りが見られます。',meta:[['特徴','扇の勾配・武者返し'],['石の積み方','打込接ぎ・算木積み']]},
   {id:'udo',name:'宇土櫓',kana:'うとやぐら',at:[-71,-41],pos:[-56,-24],look:[-71,44,-41],q:'Kumamoto castle Uto yagura',
@@ -2585,9 +2617,9 @@ const SPOTS=[
   {id:'goten',name:'本丸御殿',kana:'ほんまるごてん',at:[4,10],pos:[-6,-6],look:[4,36,10],q:'Kumamoto castle Honmaru Goten',
    text:'藩主の住まい・政務の場だった御殿。明治10年に天守とともに焼け、平成20年（2008）に大広間などが復元されました。豪華な障壁画の「昭君之間」が知られます。地震で被災し、いまは工事中（2032年度の復旧完了をめざす）。',
    meta:[['復元','平成20年（2008）'],['見どころ','昭君之間・若松之間'],['いま','工事中']],
-   edo:{text:'本丸御殿。北の石段の戸口から中へ入れます。金の障壁画で飾られた「昭君之間」は、豊臣秀頼をかくまうための部屋だったという言い伝えがあります（「将軍の間」の隠語とも。真偽は不明）。'}},
+   edo:{text:'本丸御殿。闇り通路の東西の通路にある地下の玄関（式台）から中へ入れます。金の障壁画で飾られた「昭君之間」は、豊臣秀頼をかくまうための部屋だったという言い伝えがあります（「将軍の間」の隠語とも。真偽は不明）。'}},
   {id:'kurai',name:'闇り通路',kana:'くらがりつうろ',at:[9,14],pos:[9,40],look:[9,26,6],q:'Kumamoto castle Kuragari tsuro',
-   text:'本丸御殿の床下を抜ける地下の通路。石垣の上に御殿を張り出して建てたため、その下がトンネルになりました。全国でもめずらしい造りです（いまは工事中）。飯田丸の側から上って本丸に出られます。',meta:[['特徴','御殿の下の地下通路'],['いま','工事中']]},
+   text:'本丸御殿の床下を抜ける地下の通路。高さのちがう2つの石垣（本丸側と数寄屋丸側）の上に大きな梁を渡して御殿を建てたため、その間がトンネルになり、昼でも薄暗いことから「闇り通路」と呼ばれます。幅約7mのT字形で、東西約82m・南北約44m（ここでは距離を縮めています）。石垣の目地には雨水や湿気を防ぐ漆喰を詰めています。入口は唐破風の屋根の「闇り御門」、通路の途中に御殿への正式な玄関（式台）がある、全国でただ一つの「地下玄関」です。攻め込んだ敵を暗い通路に誘いこみ、上から迎え撃つ守りの要でもありました（いまは工事中）。',meta:[['形','T字形・幅約7m'],['長さ','東西約82m・南北約44m'],['特徴','地下の玄関・目地漆喰'],['いま','工事中']],edo:{text:'本丸御殿の床下の地下通路。南の闇り御門から入り、東西の通路の途中にある地下の玄関（式台）から御殿へ上がります。藩主や客人もこの薄暗い通路を通って御殿へ上がりました。'}},
   {id:'iida',name:'飯田丸五階櫓',kana:'いいだまる ごかいやぐら',at:[-31,50],pos:[-14,40],look:[-31,30,50],q:'Kumamoto castle Iidamaru',
    text:'平成17年（2005）に復元された五階櫓。熊本地震では石垣の大半が崩れ、角の一列の石だけで支えられた「奇跡の一本石垣」で知られました。櫓は解体して保管され、石垣は令和6年（2024）に復旧しています。',
    meta:[['いま','櫓は解体・保管中'],['石垣','令和6年（2024）復旧']],edo:{text:'飯田丸の南西の角に建つ五階櫓。加藤家の重臣・飯田覚兵衛の屋敷があったことが曲輪の名の由来といわれます。'}},
@@ -3022,7 +3054,7 @@ function setMode(m){ const wasIn=P.level>=0||!!P.room; P.room=null; MODE=m; MAPR
   if(started) showHint(m==='edo'?'江戸時代（加藤清正・細川家）の熊本城と城下町。古写真・絵図などの記録に、言い伝えと想像を合わせて再現しています':'現代（令和）の熊本城に戻りました'); }
 $('tEra').onclick=()=>{ if(started) openEra(); };
 $('tQual').onclick=()=>{ quality=quality==='high'?'low':'high'; $('vQual').textContent=quality==='high'?'高':'軽'; waterMat.uniforms.uRefl.value=quality==='high'?1:0; applyPR(); renderer.setSize(innerWidth,innerHeight); sizeRT(); setShadow(); };
-function updateHUD(){ const a=P.room?P.room.name:P.level>=0?flName():areaAt(P.x,P.z); if(a!==lastArea){ lastArea=a; $('area').textContent=a; }
+function updateHUD(){ const a=P.room?((P.room.zones&&(P.room.zones.find(z=>P.x-P.room.ox>=z[0]&&P.x-P.room.ox<z[1])||[])[2])||P.room.name):P.level>=0?flName():areaAt(P.x,P.z); if(a!==lastArea){ lastArea=a; $('area').textContent=a; }
   let best=null,bd=1e9; for(const s of curSpots){ const d=Math.hypot(s.pos[0]-P.x,s.pos[1]-P.z); if(d<bd){ bd=d; best=s; } }
   const ns=doorSpot()||elevSpot()||(P.room?P.room:P.level>=0?FL[P.level]:(bd<20?best:null)); if(ns!==nearSpot){ nearSpot=ns; if(ns){ $('poiName').textContent=ns.name; } }
   $('poi').hidden=!nearSpot||!$('card').hidden||!$('map').hidden||!$('spots').hidden; }
@@ -3168,10 +3200,10 @@ for(const [s,x,y,z] of DECO_KEEP) decoT.add(s,x,y,z,{});
 
 /* ---------- 室内の調度品・人物 ---------- */
 { const D=RD;
-  rp(D.goten,'lord_green',0,.4,-d2(D.goten)-.6,{},true,['加藤清正（想像）','この城は、どんな大軍に攻められても落ちぬよう築いた。井戸も兵糧の備えも万全じゃ。']);
-  rp(D.goten,'i_toro_kin',-4.6,.4,-5.3); rp(D.goten,'i_toro_kin',4.6,.4,-5.3); rp(D.goten,'samurai_a',-6,0,1.5,{},true,['家臣','殿は朝鮮での戦いの経験をもとに、この城の守りを工夫されたと聞く。']); rp(D.goten,'sam_kami',6,0,1.5,{flip:true},true,['家臣','この昭君之間の絵は、狩野派の筆と伝わる。']);
-  for(const [s,x,z] of [['km_andon',-8.6,-4.6],['km_andon',8.6,-4.6],['km_tsubo',-6.4,-4.8],['km_zushi',6.4,-4.9],['km_shokudai',-3,-1.4],['km_shokudai',3,-1.4]]) rp(D.goten,s,x,0,z,{},true);
-  rp(D.goten,'km_maku',-8.8,0,3,{},false); rp(D.goten,'km_kikyo_ban',0,3.0,-5.9,{},false);
+  rp(D.goten,'lord_green',22.5,.4,-d2(D.goten)+1.2,{},true,['加藤清正（想像）','この城は、どんな大軍に攻められても落ちぬよう築いた。井戸も兵糧の備えも万全じゃ。']);
+  rp(D.goten,'i_toro_kin',20.4,.4,-4.8); rp(D.goten,'i_toro_kin',24.4,.4,-4.8); rp(D.goten,'samurai_a',-11.5,0,1.5,{},true,['家臣','殿は朝鮮での戦いの経験をもとに、この城の守りを工夫されたと聞く。']); rp(D.goten,'sam_kami',19.5,0,2,{flip:true},true,['家臣','この昭君之間の絵は、狩野派の筆と伝わる。']);
+  for(const [s,x,z] of [['km_andon',-12.4,-4.6],['km_andon',10.4,-4.6],['km_tsubo',-4.4,-4.8],['km_zushi',17.4,-4.6],['km_shokudai',19,-.4],['km_shokudai',24.6,-.4],['km_andon',-24,-4.6]]) rp(D.goten,s,x,0,z,{},true);
+  rp(D.goten,'km_maku',24.4,0,3,{},false); rp(D.goten,'km_kikyo_ban',21.5,3.0,-5.4,{},false);
   rp(D.machi,'q_merchant',1.6,.45,1.2,{},false,['町家の主人','清正公のおかげで、熊本の町は商いで賑わっております。']); for(const [s,x,z] of [['km_tawara',-2.5,-1.5],['km_taru',-2.4,3.6],['km_hako',-2.2,.2]]) rp(D.machi,s,x,0,z,{},true);
   rp(D.waku,'km_hohei_a',-6.4,0,-3,{},true); rp(D.waku,'km_shizoku',6.4,0,-3,{flip:true},true); rp(D.waku,'km_kikyo',0,2.2,-5.75,{},false); }
 function d2(R){ return R.d/2-1.2; }
